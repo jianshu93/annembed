@@ -40,7 +40,7 @@ path = "examples/higgs.rs"
 
 
 [[bin]]
-name = "annembed"
+name = "embed"
 path = "src/bin/annembed.rs"
 
 
