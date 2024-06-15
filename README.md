@@ -1,5 +1,8 @@
 # A data embedding tool and related data analysis or clustering
 
+This is a colloboration with Jean Pierre Both. This is for the library case only, see the scripts and useage here: https://github.com/jianshu93/annembed_analysis
+
+
 The crate provides mainly in the form of a library (*See documentation of the binary embed for a small executable embedding data in csv files*):
 
 1. Some variations on data embedding tools from t-Sne (2008) to Umap(2018).
