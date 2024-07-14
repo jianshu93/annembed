@@ -49,6 +49,7 @@ impl GraphLaplacian {
     fn do_full_svd(&mut self) -> Result<SvdResult<f32>, String> {
         //
         log::info!("GraphLaplacian doing full svd");
+        log::debug!("memory  : {:?}", memory_stats::memory_stats().unwrap());
         let b = self.sym_laplacian.get_full_mut().unwrap();
         log::trace!(
             "GraphLaplacian ... size nbrow {} nbcol {} ",
@@ -102,11 +103,11 @@ impl GraphLaplacian {
         let svdmode = RangeApproxMode::RANK(RangeRank::new(20, 5));
         let svd_res = svdapprox.direct_svd(svdmode);
         log::trace!("exited svd");
-        if !svd_res.is_ok() {
+        if svd_res.is_err() {
             println!("svd approximation failed");
             std::panic!();
         }
-        return svd_res;
+        svd_res
     } // end if do_approx_svd
 
     pub fn do_svd(&mut self, asked_dim: usize) -> Result<SvdResult<f32>, String> {
@@ -170,8 +171,7 @@ pub(crate) fn get_laplacian(initial_space: &NodeParams) -> GraphLaplacian {
         }
         //
         log::trace!("\n allocating full matrix laplacian");
-        let laplacian = GraphLaplacian::new(MatRepr::from_array2(symgraph), diag);
-        laplacian
+        GraphLaplacian::new(MatRepr::from_array2(symgraph), diag)
     } else {
         log::debug!("Embedder using csr matrix");
         // now we must construct a CsrMat to store the symetrized graph transition probablity to go svd.
@@ -214,7 +214,7 @@ pub(crate) fn get_laplacian(initial_space: &NodeParams) -> GraphLaplacian {
             let row = rows[i];
             let col = cols[i];
             if row != col {
-                values[i] = values[i] / (diagonal[row] * diagonal[col]).sqrt();
+                values[i] /= (diagonal[row] * diagonal[col]).sqrt();
             }
         }
         //
@@ -226,8 +226,7 @@ pub(crate) fn get_laplacian(initial_space: &NodeParams) -> GraphLaplacian {
             values,
         );
         let csr_mat: CsMat<f32> = laplacian.to_csr();
-        let laplacian = GraphLaplacian::new(MatRepr::from_csrmat(csr_mat), diagonal);
-        laplacian
+        GraphLaplacian::new(MatRepr::from_csrmat(csr_mat), diagonal)
     } // end case CsMat
       //
 } // end of get_laplacian

@@ -80,7 +80,7 @@ impl <F> Distance<F> for DistL2F
 pub struct Embedder<'a,F> {
     /// graph constrcuted with fromhnsw module
     kgraph: Option<&'a KGraph<F>>,
-    ///
+    /// projection
     hkgraph: Option<&'a KGraphProjection<F>>,
     /// parameters
     parameters : EmbedderParams,
@@ -136,11 +136,11 @@ where
     pub fn embed(&mut self) -> Result<usize, usize> {
         if self.kgraph.is_some() {
             log::info!("doing one step embedding");
-            return self.one_step_embed();
+            self.one_step_embed()
         }
         else {
             log::info!("doing 2 step embedding");
-            return self.h_embed();
+            self.h_embed()
         }
     } // end of embed
 
@@ -218,11 +218,11 @@ where
         match embedding_res {
             Ok(embedding) => {
                 self.embedding = Some(embedding);
-                return Ok(1);
+                Ok(1)
             }
             _ => {
                 log::error!("Embedder::embed : embedding optimization failed");
-                return Err(1);
+                Err(1)
             }        
         }
     } // end of h_embed
@@ -259,11 +259,11 @@ where
         match embedding_res {
             Ok(embedding) => {
                 self.embedding = Some(embedding);
-                return Ok(1);
+                Ok(1)
             }
             _ => {
                 log::error!("Embedder::embed : embedding optimization failed");
-                return Err(1);
+                Err(1)
             }        
         }
     } // end embed
@@ -301,7 +301,7 @@ where
                 reindexed[[*origin_id,j]] = row[j];
             }
         }
-        return reindexed;
+        reindexed
     }    
 
     /// **return the embedded vector corresponding to original data vector corresponding to data_id**
@@ -347,7 +347,7 @@ where
                 reindexed[[*origin_id,j]] = row[j];
             }
         }
-        return reindexed;
+        reindexed
     }  // end of get_initial_embedding_reindexed
 
 
@@ -407,7 +407,7 @@ where
                 }
                 // sort transformed_neighborhood
                 transformed_neighborhood.sort_unstable_by(|a,b|  a.weight.partial_cmp(&b.weight).unwrap());
-                return (n, transformed_neighborhood);
+                (n, transformed_neighborhood)
             }
             ).collect();
         // We need to ensure that parallel iter did not permute data. 
@@ -416,12 +416,12 @@ where
         for i in 0..neighbours.len() {
             sorted_neighbours_info.push((i, Vec::<OutEdge<F>>::new()));
         }
-        for i in 0.. transformed_neighbours.len() {
-            let slot = transformed_neighbours[i].0;
-            sorted_neighbours_info[slot] = transformed_neighbours[i].clone();
+        for item  in &transformed_neighbours {
+            let slot = item.0;
+            sorted_neighbours_info[slot] = item.clone();
         }
         //
-        return Some(sorted_neighbours_info); 
+        Some(sorted_neighbours_info)
     } // end of get_transformed_kgraph
 
 
@@ -439,10 +439,10 @@ where
         let mut hnsw = Hnsw::<F, DistL2F>::new(max_nb_connection, nb_nodes, nb_layer, ef_c, DistL2F{});
         hnsw.set_keeping_pruned(true);
         // need to store arrayviews to get a sufficient lifetime to call as_slice later
-        let vectors : Vec<ArrayView1<F>> = (0..nb_nodes).into_iter().map(|i| (embedding.row(i))).collect();
+        let vectors : Vec<ArrayView1<F>> = (0..nb_nodes).map(|i| (embedding.row(i))).collect();
         let mut data_with_id = Vec::<(&[F], usize)>::with_capacity(nb_nodes);
-        for i in 0..nb_nodes {
-            data_with_id.push((vectors[i].as_slice().unwrap(), i));
+        for (i,v) in vectors.iter().enumerate().take(nb_nodes) {
+            data_with_id.push((v.as_slice().unwrap(), i));
         }
         hnsw.parallel_insert_slice(&data_with_id);
         // compute kgraph from hnsw and sum edge length 
@@ -538,12 +538,12 @@ where
             max_edges_q.insert(max_edges_embedded[i].1);
             // how many transformed edges are in maximal neighborhood of size nbng?
             let neighbours = &transformed_kgraph[i].1;
-            for e in 0..neighbours.len() {
-                if neighbours[e].weight.to_f64().unwrap() <= max_edges_embedded[i].1 {
+            for e in neighbours {
+                if e.weight.to_f64().unwrap() <= max_edges_embedded[i].1 {
                     nodes_match[i] += 1;          
                 }
-                ratio_dist_q.insert(neighbours[e].weight.to_f64().unwrap() / max_edges_embedded[i].1);
-                mean_ratio.0 += neighbours[e].weight.to_f64().unwrap() / max_edges_embedded[i].1;
+                ratio_dist_q.insert(e.weight.to_f64().unwrap() / max_edges_embedded[i].1);
+                mean_ratio.0 += e.weight.to_f64().unwrap() / max_edges_embedded[i].1;
             }
             mean_ratio.1 += neighbours.len();
             first_dist.push(neighbours[0].weight.to_f64().unwrap());
@@ -576,11 +576,11 @@ where
         let mut csv_dist = Writer::from_path("first_dist.csv").unwrap();
         let _res = write_csv_labeled_array2(&mut csv_dist, first_dist.as_slice(), &self.get_embedded_reindexed());
         csv_dist.flush().unwrap();
-        ///
+        //
         let cpu_time: Duration = cpu_start.elapsed();
         log::info!(" quality estimation,  sys time(s) {:?} cpu time {:?}", sys_now.elapsed().unwrap().as_secs(), cpu_time.as_secs());
         //
-        return Some(quality);
+        Some(quality)
     } // end of get_quality_estimate_from_edge_length
 
 
@@ -590,7 +590,7 @@ where
     // We return beta/local_scale
     // as function is monotonic with respect to scale, we use dichotomy.
     #[allow(unused)]
-    fn get_scale_from_umap(&self, norm: f64, neighbours: &Vec<OutEdge<F>>) -> (f32, Vec<f32>) {
+    fn get_scale_from_umap(&self, norm: f64, neighbours: &[OutEdge<F>]) -> (f32, Vec<f32>) {
         // p_i = exp[- beta * (d(x,y_i)/ local_scale) ]
         let nbgh = neighbours.len();
         let rho_x = neighbours[0].weight.to_f32().unwrap();
@@ -598,6 +598,7 @@ where
             .iter()
             .map(|n| n.weight.to_f32().unwrap())
             .collect::<Vec<f32>>();
+        //
         let f = |beta: f32| {
             dist.iter()
                 .map(|d| (-(d - rho_x) * beta).exp())
@@ -607,8 +608,8 @@ where
         // TODO we could also normalize as usual?
         let beta = dichotomy_solver(false, f, 0f32, f32::MAX, norm as f32).unwrap();
         // reuse rho_y_s to return proba of edge
-        for i in 0..nbgh {
-            dist[i] = (-(dist[i] - rho_x) * beta).exp();
+        for d in dist.iter_mut() {
+            *d = (-(*d - rho_x) * beta).exp();
         }
         // in this state neither sum of proba adds up to 1 neither is any entropy (Shannon or Renyi) normailed.
         (1. / beta, dist)
@@ -746,11 +747,11 @@ impl <'a, F> EntropyOptim<'a,F>
         println!("\n\n embedded scales quantiles at 0.05 : {:.2e} , 0.5 :  {:.2e}, 0.95 : {:.2e}, 0.99 : {:.2e}", 
         scales_q.query(0.05).unwrap().1, scales_q.query(0.5).unwrap().1, 
         scales_q.query(0.95).unwrap().1, scales_q.query(0.99).unwrap().1);
-        println!("");  
+        println!();  
         //
         EntropyOptim { node_params,  edges, embedded, embedded_scales, 
                             pos_edge_distribution : pos_edge_sampler,
-                            params : params}
+                            params}
         // construct field embedded
     }  // end of new 
 
@@ -777,7 +778,7 @@ impl <'a, F> EntropyOptim<'a,F>
                 embedding_res[[i,j]] = row[j];
             }
         }
-        return embedding_res;
+        embedding_res
     }
 
 
@@ -799,7 +800,7 @@ impl <'a, F> EntropyOptim<'a,F>
                 embedding_res[[*origin_id,j]] = row[j];
             }
         }
-        return embedding_res;
+        embedding_res
     }
 
 
@@ -865,7 +866,8 @@ impl <'a, F> EntropyOptim<'a,F>
                 term
             })
             .sum::<f64>();
-        return ce_entropy;
+        //
+        ce_entropy
     }  // end of ce_compute_threaded
 
 
@@ -912,15 +914,14 @@ impl <'a, F> EntropyOptim<'a,F>
         let d_ij : f64 = y_i.iter().zip(y_j.iter()).map(|(vi,vj)| (*vi-*vj)*(*vi-*vj)).sum::<F>().to_f64().unwrap();
         let d_ij_scaled = d_ij/(scale*scale);
         // this coeff is common for P and 1.-P part
-        let coeff : f64;
-        if b != 1. { 
+        let coeff : f64 = if b != 1. { 
             let cauchy_weight = 1./ (1. + d_ij_scaled.powf(b));
-            coeff =  2. * b * cauchy_weight * d_ij_scaled.powf(b - 1.)/ (scale*scale);
+            2. * b * cauchy_weight * d_ij_scaled.powf(b - 1.)/ (scale*scale)
         }
         else {
             let cauchy_weight = 1./ (1. + d_ij_scaled);
-            coeff =  2. * b * cauchy_weight / (scale*scale);
-        }
+            2. * b * cauchy_weight / (scale*scale)
+        };
         if d_ij_scaled > 0. {
             // repulsion annhinilate  attraction if P<= 1. / (alfa + 1). choose 0.1/ PROBA_MIN 
             let alfa = (1./ PROBA_MIN) as f64;
@@ -955,15 +956,14 @@ impl <'a, F> EntropyOptim<'a,F>
                 // compute the common part of coeff as in function grad_common_coeff
                 let d_ik : f64 = y_i.iter().zip(y_k.iter()).map(|(vi,vj)| (*vi-*vj)*(*vi-*vj)).sum::<F>().to_f64().unwrap();
                 let d_ik_scaled = d_ik/(scale*scale);
-                let coeff : f64;
-                if b != 1. {
+                let coeff = if b != 1. {
                     let cauchy_weight = 1./ (1. + d_ik_scaled.powf(b));
-                    coeff = 2. * b * cauchy_weight * d_ik_scaled.powf(b - 1.)/ (scale*scale);
+                    2. * b * cauchy_weight * d_ik_scaled.powf(b - 1.)/ (scale*scale)
                 }
                 else {
                     let cauchy_weight = 1./ (1. + d_ik_scaled);
-                    coeff = 2. * b * cauchy_weight/ (scale*scale);
-                }
+                    2. * b * cauchy_weight/ (scale*scale)
+                };
                 // we know node_j is not in neighbour, we smooth repulsion for point with dist less than scale/4
                 // the part of repulsion comming from coeff is less than 1/(scale * scale)
                 // 
@@ -1019,19 +1019,19 @@ pub(crate) fn to_proba_edges<F>(kgraph : & KGraph<F>, scale_rho : f32, beta : f3
     let neighbour_hood = kgraph.get_neighbours();
     // a closure to compute scale and perplexity
     let scale_perplexity = | i : usize | ->  (usize, Option<(f32, NodeParam)>) {
-        if neighbour_hood[i].len() > 0 {
+        if !neighbour_hood.is_empty() {
             let node_param = get_scale_from_proba_normalisation(kgraph, scale_rho, beta, &neighbour_hood[i]);
             let perplexity = node_param.get_perplexity();
-            return (i, Some((perplexity, node_param)));
+            (i, Some((perplexity, node_param)))
         }
         else {
-            return (i, None);
+            (i, None)
         }
     };
     let mut opt_node_params :  Vec::<(usize,Option<(f32, NodeParam)>)> =  Vec::<(usize,Option<(f32, NodeParam)>)>::new();
-    let mut node_params : Vec<NodeParam> = (0..neighbour_hood.len()).into_iter().map(|_| NodeParam::default()).collect();
+    let mut node_params : Vec<NodeParam> = (0..neighbour_hood.len()).map(|_| NodeParam::default()).collect();
     //
-    (0..neighbour_hood.len()).into_par_iter().map(|i| scale_perplexity(i)).collect_into_vec(&mut opt_node_params);
+    (0..neighbour_hood.len()).into_par_iter().map(scale_perplexity).collect_into_vec(&mut opt_node_params);
     // now we process serial information related to opt_node_params
     let mut max_nbng = 0;
     for opt_param in &opt_node_params {
@@ -1066,7 +1066,7 @@ pub(crate) fn to_proba_edges<F>(kgraph : & KGraph<F>, scale_rho : f32, beta : f3
     println!("\n perplexity quantile at 0.05 : {:.2e} , 0.5 :  {:.2e}, 0.95 : {:.2e}, 0.99 : {:.2e}", 
     perplexity_q.query(0.05).unwrap().1, perplexity_q.query(0.5).unwrap().1, 
     perplexity_q.query(0.95).unwrap().1, perplexity_q.query(0.99).unwrap().1);
-    println!("");    
+    println!();    
     //
     NodeParams::new(node_params, max_nbng)
 }  // end of construction of node params
@@ -1087,7 +1087,7 @@ pub(crate) fn to_proba_edges<F>(kgraph : & KGraph<F>, scale_rho : f32, beta : f3
 // This function returns the local scale (i.e mean distance of a point to its nearest neighbour)
 // and vector of proba weight to nearest neighbours.
 //
-fn get_scale_from_proba_normalisation<F> (kgraph : & KGraph<F>, scale_rho : f32, beta : f32, neighbours: &Vec<OutEdge<F>>) -> NodeParam 
+fn get_scale_from_proba_normalisation<F> (kgraph : & KGraph<F>, scale_rho : f32, beta : f32, neighbours: &[OutEdge<F>]) -> NodeParam 
     where F : Float + num_traits::cast::FromPrimitive + Sync + Send + std::fmt::UpperExp + std::iter::Sum {
     //
 //        log::trace!("in get_scale_from_proba_normalisation");
@@ -1096,10 +1096,12 @@ fn get_scale_from_proba_normalisation<F> (kgraph : & KGraph<F>, scale_rho : f32,
     // determnine mean distance to nearest neighbour at local scale, reason why we need kgraph as argument.
     let rho_x = neighbours[0].weight.to_f32().unwrap();
     let mut rho_y_s = Vec::<f32>::with_capacity(neighbours.len() + 1);
-    for i in 0..nbgh {
-        let y_i = neighbours[i].node; // y_i is a NodeIx = usize
+    //
+    for neighbour in neighbours {
+        let y_i = neighbour.node; // y_i is a NodeIx = usize
         rho_y_s.push(kgraph.get_neighbours()[y_i][0].weight.to_f32().unwrap());
     } // end of for i
+    //
     rho_y_s.push(rho_x);
     let mean_rho = rho_y_s.iter().sum::<f32>() / (rho_y_s.len() as f32);
     // we set scale so that transition proba do not vary more than PROBA_MIN between first and last neighbour
@@ -1145,8 +1147,8 @@ fn get_scale_from_proba_normalisation<F> (kgraph : & KGraph<F>, scale_rho : f32,
             assert!(proba_range >= PROBA_MIN, "proba range {:.2e} too low edge proba, increase scale_rho or reduce beta", proba_range);
             //
             let sum = probas_edge.iter().map(|e| e.weight).sum::<f32>();
-            for i in 0..nbgh {
-                probas_edge[i].weight = probas_edge[i].weight / sum;
+            for p in probas_edge.iter_mut().take(nbgh) {
+                p.weight /= sum;
             }
             return NodeParam::new(scale, probas_edge);
         }
@@ -1160,7 +1162,7 @@ fn get_scale_from_proba_normalisation<F> (kgraph : & KGraph<F>, scale_rho : f32,
             .iter()
             .map(|n| OutEdge::<f32>::new(n.node, 1.0 / nbgh as f32))
             .collect::<Vec<OutEdge<f32>>>();
-        return NodeParam::new(scale, probas_edge);
+        NodeParam::new(scale, probas_edge)
     }
     else {
         log::error!("fatal error in get_scale_from_proba_normalisation, should not happen!");
@@ -1187,7 +1189,7 @@ fn clip<F>(f : F, max : f64) -> F
     else {
         f_r
     };
-    return F::from(truncated).unwrap();
+    F::from(truncated).unwrap()
 }   // end clip
 
 
@@ -1218,7 +1220,7 @@ where
     }
     assert!(weight_f < F::one());
     assert!(weight_f.is_normal());      
-    return weight_f;
+    weight_f
 } // end of cauchy_edge_weight
 
 
@@ -1237,7 +1239,7 @@ where F :  Float + std::iter::Sum + num_traits::cast::FromPrimitive {
 
 
 // in embedded space (in unit ball or unit box) the scale is chosen as the scale at corresponding point / divided by mean initial scales.
-fn estimate_embedded_scales_from_initial_scales(initial_scales :&Vec<f32>) -> Vec<f32> {
+fn estimate_embedded_scales_from_initial_scales(initial_scales :&[f32]) -> Vec<f32> {
     log::trace!("estimate_embedded_scale_from_initial_scales");
     let mean_scale : f32 = initial_scales.iter().sum::<f32>() / (initial_scales.len() as f32);
     let scale_sup = 4.0;  // CAVEAT seems we can go up to 4.
@@ -1246,8 +1248,8 @@ fn estimate_embedded_scales_from_initial_scales(initial_scales :&Vec<f32>) -> Ve
     // We want embedded scae impact between 0.5 and 2 (amplitude 4) , we take into account the square in cauchy weight
     let embedded_scale : Vec<f32> = initial_scales.iter().map(|&x| width * (x/mean_scale).min(scale_sup).max(scale_inf)).collect();
     //
-    for i in 0..embedded_scale.len() {
-        log::trace!("embedded scale for node {} : {:.2e}", i , embedded_scale[i]);
+    for (i,scale)  in embedded_scale.iter().enumerate() {
+        log::trace!("embedded scale for node {} : {:.2e}", i , scale);
     }
     //
     embedded_scale
@@ -1271,14 +1273,14 @@ fn set_data_box<F>(data : &mut Array2<F>, box_size : f64)
     }
     for j in 0..dim  {
         for i in 0..nbdata {
-            data[[i,j]] = data[[i,j]] - means[j];
+            data[[i,j]] -= means[j];
             max_max = max_max.max(data[[i,j]].abs());          
         }
     }
     //
     max_max /= F::from(0.5 * box_size).unwrap();
     for f in data.iter_mut()  {
-        *f = (*f)/max_max;
+        *f /= max_max;
         assert!((*f).abs() <= F::one());
     }    
 }  // end of set_data_box
@@ -1321,7 +1323,7 @@ mod tests {
         let nb_elem = 500;
         let embed_dim = 20;
         let data = gen_rand_data_f32(nb_elem, embed_dim);
-        let data_with_id = data.iter().zip(0..data.len()).collect();
+        let data_with_id = data.iter().zip(0..data.len()).collect::<Vec<(&Vec<f32>,usize)>>();
         // hnsw construction
         let ef_c = 50;
         let max_nb_connection = 50;
