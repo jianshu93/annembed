@@ -260,7 +260,7 @@ fn get_kgraphproj_with_distname(
 
 #[allow(clippy::range_zip_with_len)]
 pub fn main() {
-    println!("initializing default logger from environment ...");
+    println!("\n ************** initializing logger *****************\n");
     env_logger::Builder::from_default_env().init();
     log::info!("logger initialized from default environment");
     //
@@ -268,6 +268,7 @@ pub fn main() {
     let embedparams: EmbedderParams;
     //
     let embedcmd = Command::new("embed")
+        .about("Embedding")
         .arg(
             Arg::new("step_grap")
                 .required(false)
@@ -304,6 +305,9 @@ pub fn main() {
         );
 
     let hnswcmd = Command::new("hnsw")
+        .about("Build HNSW graph without performing embedding")
+        .about("Non-linear Dimension Reduction/Embedding via Approximate Nearest Neighbor Graph")
+        .version("0.1.5")
         .arg(Arg::new("dist")
             .long("dist")
             .short('d')
