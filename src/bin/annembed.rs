@@ -306,7 +306,6 @@ pub fn main() {
 
     let hnswcmd = Command::new("hnsw")
         .about("Build HNSW graph without performing embedding")
-        .about("Non-linear Dimension Reduction/Embedding via Approximate Nearest Neighbor Graph")
         .version("0.1.5")
         .arg(Arg::new("dist")
             .long("dist")
@@ -341,6 +340,7 @@ pub fn main() {
     let matches = Command::new("annembed")
         //        .subcommand_required(true)
         .arg_required_else_help(true)
+        .about("Non-linear Dimension Reduction/Embedding via Approximate Nearest Neighbor Graph")
         .arg(
             Arg::new("csvfile")
                 .long("csv")
