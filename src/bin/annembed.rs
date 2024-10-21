@@ -166,6 +166,7 @@ pub fn main() {
     let embedparams: EmbedderParams;
     //
     let hnswcmd = Command::new("hnsw")
+        .about("Build HNSW graph")
         .arg(Arg::new("dist")
             .long("dist")
             .short('d')
@@ -199,6 +200,7 @@ pub fn main() {
     let matches = Command::new("annembed")
         //        .subcommand_required(true)
         .arg_required_else_help(true)
+        .about("Non-linear Dimension Reduction/Embedding via Approximate Nearest Neighbor Graph")
         .arg(
             Arg::new("csvfile")
                 .long("csv")
