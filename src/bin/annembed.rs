@@ -199,6 +199,7 @@ pub fn main() {
     //
     let matches = Command::new("annembed")
         //        .subcommand_required(true)
+        .version("0.1.7")
         .arg_required_else_help(true)
         .about("Non-linear Dimension Reduction/Embedding via Approximate Nearest Neighbor Graph")
         .arg(
