@@ -1,3 +1,12 @@
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](https://bioconda.github.io/recipes/annembed/README.html)
+![](https://anaconda.org/bioconda/annembed/badges/license.svg)
+![](https://anaconda.org/bioconda/annembed/badges/version.svg)
+![](https://anaconda.org/bioconda/annembed/badges/latest_release_relative_date.svg)
+![](https://anaconda.org/bioconda/annembed/badges/platforms.svg)
+
+[![Latest Version](https://img.shields.io/crates/v/gsearch?style=for-the-badge&color=mediumpurple&logo=rust)](https://crates.io/crates/annembed)
+[![docs.rs](https://img.shields.io/docsrs/annembed?style=for-the-badge&logo=docs.rs&color=mediumseagreen)](https://docs.rs/annembed/latest/annembed/)
+
 # A data embedding tool and related data analysis or clustering
 
 
