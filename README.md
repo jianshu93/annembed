@@ -233,7 +233,7 @@ Two algorithms for range approximation used in approximated SVD are:
 
 ## Contributions
 
-The logo was designed by Jianshu Zao.
+The logo was designed by Jianshu Zhao.
 
 ## License
 
@@ -244,3 +244,6 @@ Licensed under either of
 2. MIT license [LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>
 
 at your option.
+
+## Reference
+Jianshu Zhao, Jean Pierre Both, Konstantinos T Konstantinidis, Approximate nearest neighbor graph provides fast and efficient embedding with applications for large-scale biological data, NAR Genomics and Bioinformatics, Volume 6, Issue 4, December 2024, lqae172, https://doi.org/10.1093/nargab/lqae172
