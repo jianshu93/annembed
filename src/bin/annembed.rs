@@ -19,10 +19,11 @@
 //!  --sampling : optional, for large data defines the fraction of sampled data as 1./sampling
 //!
 //! - Parameters for the hnsw subcommand. For more details see [hnsw_rs](https://crates.io/crates/hnsw_rs).   
-//! --nbconn  : defines the number of connections by node in a layer.   Can range from 4 to 64 or more if necessary and enough memory
-//! --dist    : name of distance to use: "DistL1", "DistL2", "DistCosine", "DistJeyffreys"
-//! --ef      : controls the with of the search, a good guess is between 24 and 64 or more if necessay
-//! --knbn    : the number of nodes to use in retrieval requests.  
+//!     --nbconn  : defines the number of connections by node in a layer.   Can range from 4 to 64 or more if necessary and enough memory.
+//!     --dist    : name of distance to use: "DistL1", "DistL2", "DistCosine", "DistJeyffreys".
+//!     --ef      : controls the with of the search, a good guess is between 24 and 64 or more if necessary.
+//!     --knbn    : the number of nodes to use in retrieval requests. 
+//!     --scale_modification_f : scale factor to control Hierarchy of HNSW for high dimensional datasets (e.g., d > 32).
 //!     
 //! The csv file must have one record by vector to embed. The default delimiter is ','.  
 //! The output is a csv file with embedded vectors.  
@@ -212,7 +213,7 @@ pub fn main() {
     //
     let matches = Command::new("annembed")
         //        .subcommand_required(true)
-        .version("0.1.7")
+        .version("0.1.4")
         .arg_required_else_help(true)
         .about("Non-linear Dimension Reduction/Embedding via Approximate Nearest Neighbor Graph")
         .arg(
