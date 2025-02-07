@@ -182,28 +182,28 @@ pub fn main() {
             .required(true)
             .action(ArgAction::Set)
             .value_parser(clap::value_parser!(String))
-            .help("distance is required   \"DistL1\" , \"DistL2\", \"DistCosine\", \"DistJeyffreys\"  "))
+            .help("Distance type is required   \"DistL1\" , \"DistL2\", \"DistCosine\", \"DistJeyffreys\"  "))
         .arg(Arg::new("nbconn")
             .long("nbconn")
             .required(true)
             .action(ArgAction::Set)
             .value_parser(clap::value_parser!(usize))
-            .help("number of neighbours by layer"))
+            .help("Maximum number of connections allowed (M in HNSW)"))
         .arg(Arg::new("knbn")
             .long("knbn")
             .required(true)
             .action(ArgAction::Set)
             .value_parser(clap::value_parser!(usize))
-            .help("number of neighbours to use"))
+            .help("Number of k-nearest neighbours"))
         .arg(Arg::new("ef")
             .long("ef")
             .required(true)
             .action(ArgAction::Set)
             .value_parser(clap::value_parser!(usize))
-            .help("search factor"))
+            .help("Search factor EF in HNSW"))
         .arg(Arg::new("scale_modification")
             .long("scale_modify_f")
-            .help("scale modification factor in HNSW or HubNSW, must be in [0.2,1]")
+            .help("Scale modification factor in HNSW/HubNSW or FlatNav, must be in [0.2,1]")
             .value_name("scale_modify")
             .default_value("1.0")
             .action(ArgAction::Set)
@@ -232,7 +232,7 @@ pub fn main() {
                 .required(false)
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(String))
-                .help("expecting output file name"),
+                .help("Output file name"),
         )
         .arg(
             Arg::new("delim")
@@ -240,7 +240,7 @@ pub fn main() {
                 .short('d')
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(char))
-                .help("delimiter can be ' ', ','"),
+                .help("Delimiter can be ' ', ','"),
         )
         // ann group flags
         .arg(
@@ -250,7 +250,7 @@ pub fn main() {
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(usize))
                 .default_value("20")
-                .help("number of batches to run"),
+                .help("Number of batches to run"),
         )
         .arg(
             Arg::new("grap_step")
@@ -258,7 +258,7 @@ pub fn main() {
                 .long("stepg")
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(f64))
-                .help("gradient step"),
+                .help("Number of gradient descent steps"),
         )
         .arg(
             Arg::new("nbsample")
@@ -267,7 +267,7 @@ pub fn main() {
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(usize))
                 .default_value("10")
-                .help("number of edge sampling"),
+                .help("Number of edge sampling"),
         )
         .arg(
             Arg::new("hierarchy")
@@ -277,7 +277,7 @@ pub fn main() {
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(usize))
                 .default_value("0")
-                .help("expecting a layer num"),
+                .help("A layer num"),
         )
         .arg(
             Arg::new("scale")
@@ -286,7 +286,7 @@ pub fn main() {
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(f64))
                 .default_value("1.0")
-                .help("spatial scale factor"),
+                .help("Spatial scale factor"),
         )
         .arg(
             Arg::new("dimension")
@@ -296,7 +296,7 @@ pub fn main() {
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(usize))
                 .default_value("2")
-                .help("dimension of embedding"),
+                .help("Dimension of embedding"),
         )
         .arg(
             Arg::new("quality")
@@ -305,7 +305,7 @@ pub fn main() {
                 .short('q')
                 .action(ArgAction::Set)
                 .value_parser(clap::value_parser!(f64))
-                .help("specify sampling fraction, should <= 1."),
+                .help("Sampling fraction, should <= 1."),
         )
         .subcommand(hnswcmd)
         .get_matches();
