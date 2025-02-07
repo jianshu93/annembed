@@ -26,7 +26,8 @@
 //!     --dist    : name of distance to use: "DistL1", "DistL2", "DistCosine", "DistJeyffreys".  
 //!     --ef      : controls the with of the search, a good guess is between 24 and 64 or more if necessary.  
 //!     --knbn    : the number of nodes to use in retrieval requests.  
-//!     
+//!     --scale_modification_f : scale factor to control Hierarchy of HNSW for high dimensional datasets (e.g., d > 32).
+//!
 //! The csv file must have one record by vector to embed. The default delimiter is ','.  
 //! The output is a csv file with embedded vectors.  
 //! The Julia directory provides helpers to get Persistence diagrams and barcodes and vizualize them using Ripserer.jl
@@ -55,6 +56,8 @@ pub struct HnswParams {
     knbn: usize,
     /// distance to use in Hnsw. Default is "DistL2". Other choices are "DistL1", "DistCosine", DistJeffreys
     distance: String,
+    //scale_modification factor, must be [0.2, 1]
+    scale_modification : f64,
 } // end of struct HnswParams
 
 impl HnswParams {
@@ -64,16 +67,18 @@ impl HnswParams {
             ef_c: 400,
             knbn: 10,
             distance: String::from("DistL2"),
+            scale_modification: 1.0,
         }
     }
 
     #[allow(unused)]
-    pub fn new(max_conn: usize, ef_c: usize, knbn: usize, distance: String) -> Self {
+    pub fn new(max_conn: usize, ef_c: usize, knbn: usize, distance: String, scale_modification: f64) -> Self {
         HnswParams {
             max_conn,
             ef_c,
             knbn,
             distance,
+            scale_modification,
         }
     }
 } // end impl block
@@ -102,6 +107,7 @@ fn parse_hnsw_cmd(matches: &ArgMatches) -> Result<HnswParams, anyhow::Error> {
     hnswparams.max_conn = *matches.get_one::<usize>("nbconn").unwrap();
     hnswparams.ef_c = *matches.get_one::<usize>("ef").unwrap();
     hnswparams.knbn = *matches.get_one::<usize>("knbn").unwrap();
+    hnswparams.scale_modification = *matches.get_one::<f64>("scale_modification").unwrap();
 
     match matches.get_one::<String>("dist") {
         Some(str) => match str.as_str() {
@@ -169,6 +175,7 @@ pub fn main() {
     let embedparams: EmbedderParams;
     //
     let hnswcmd = Command::new("hnsw")
+        .about("Build HNSW graph")
         .arg(Arg::new("dist")
             .long("dist")
             .short('d')
@@ -193,7 +200,14 @@ pub fn main() {
             .required(true)
             .action(ArgAction::Set)
             .value_parser(clap::value_parser!(usize))
-            .help("search factor"));
+            .help("search factor"))
+        .arg(Arg::new("scale_modification")
+            .long("scale_modify_f")
+            .help("scale modification factor in HNSW or HubNSW, must be in [0.2,1]")
+            .value_name("scale_modify")
+            .default_value("1.0")
+            .action(ArgAction::Set)
+            .value_parser(clap::value_parser!(f64)));
 
     //
     // Now the command line
@@ -202,6 +216,7 @@ pub fn main() {
     let matches = Command::new("annembed")
         //        .subcommand_required(true)
         .arg_required_else_help(true)
+        .about("Non-linear Dimension Reduction/Embedding via Approximate Nearest Neighbor Graph")
         .arg(
             Arg::new("csvfile")
                 .long("csv")
@@ -433,13 +448,14 @@ where
 {
     //
     let nb_data = data_with_id.len();
-    let hnsw = Hnsw::<f64, Dist>::new(
+    let mut hnsw = Hnsw::<f64, Dist>::new(
         hnswparams.max_conn,
         nb_data,
         nb_layer,
         hnswparams.ef_c,
         Dist::default(),
     );
+    hnsw.modify_level_scale(hnswparams.scale_modification);
     hnsw.parallel_insert(data_with_id);
     hnsw.dump_layer_info();
     let kgraph_res = kgraph_from_hnsw_all(&hnsw, hnswparams.knbn);
@@ -500,13 +516,14 @@ where
 {
     //
     let nb_data = data_with_id.len();
-    let hnsw = Hnsw::<f64, Dist>::new(
+    let mut hnsw = Hnsw::<f64, Dist>::new(
         hnswparams.max_conn,
         nb_data,
         nb_layer,
         hnswparams.ef_c,
         Dist::default(),
     );
+    hnsw.modify_level_scale(hnswparams.scale_modification);
     hnsw.parallel_insert(data_with_id);
     hnsw.dump_layer_info();
     KGraphProjection::<f64>::new(&hnsw, hnswparams.knbn, layer_proj)
