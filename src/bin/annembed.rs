@@ -63,8 +63,8 @@ pub struct HnswParams {
 impl HnswParams {
     pub fn my_default() -> Self {
         HnswParams {
-            max_conn: 48,
-            ef_c: 400,
+            max_conn: 64,
+            ef_c: 512,
             knbn: 10,
             distance: String::from("DistL2"),
             scale_modification: 1.0,
@@ -185,7 +185,7 @@ pub fn main() {
             .help("Distance type is required, must be one of   \"DistL1\" , \"DistL2\", \"DistCosine\" and \"DistJeyffreys\"  "))
         .arg(Arg::new("nbconn")
             .long("nbconn")
-            .default_value("64")
+            .default_value("48")
             .action(ArgAction::Set)
             .value_parser(clap::value_parser!(usize))
             .help("Maximum number of build connections allowed (M in HNSW)"))
