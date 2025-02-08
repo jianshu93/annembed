@@ -167,7 +167,7 @@ fn parse_embed_group(
 
 #[allow(clippy::range_zip_with_len)]
 pub fn main() {
-    println!("initializing default logger from environment ...");
+    println!("\n ************** initializing logger *****************\n");
     env_logger::Builder::from_default_env().init();
     log::info!("logger initialized from default environment");
     //
